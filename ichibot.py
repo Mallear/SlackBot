@@ -22,6 +22,7 @@ def get_bot_id():
         users = api_call.get('members')
         for user in users:
             if 'name' in user and user.get('name') == BOT_NAME:
+                print(user.get('id'))
                 return user.get('id')
     else:
         return None
