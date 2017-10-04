@@ -35,8 +35,8 @@ def handle_add_command(command, channel):
     args = command.split(' ')
     hours = args[1]
     if is_number(hours):
-        if args[2] == 'to':
-            project = args[3]
+        if args[3] == 'to':
+            project = args[-1]
             if project in TIMESHEET:
                 TIMESHEET[project] = TIMESHEET[project] + int(hours)
                 response = hours + " heures imputées sur le projet " + project
@@ -66,13 +66,15 @@ def handle_set_command(command, channel):
     args = command.split(' ')
     hours = args[1]
     if is_number(hours):
-        if args[2] == 'to':
-            project = args[3]
+        if args[3] == 'to':
+            project = args[5]
             if project in TIMESHEET:
                 TIMESHEET[project] = int(hours)
                 response = hours + " heures imputées sur le projet " + project
             else:
                 response = "Le projet " + project + " ne vous est pas associé"
+        else:
+            response = "Pbm args = to"
     else:
         response = "Veuillez renseigner une valeur d'heure valide : "+ hours
     slack_client.api_call("chat.postMessage", channel=channel,
@@ -85,15 +87,19 @@ def handle_list_command(command, channel):
     args = command.split(' ')
     del(args[0])
     response = 'Heures imputées du jour :\n'
+    sum_hours = 0
     if len(args) >= 1:
         for project in args:
             if project in TIMESHEET:
-                response = response + str(TIMESHEET[project]) + ' heures imputées sur le projet *' +project + '*\n'
+                response = response + '*' + str(TIMESHEET[project]) + '*' + ' heures imputées sur le projet *' +project + '*\n'
             else:
                 response = response + project + 'ne vous est pas associé'
     else:
         for project in TIMESHEET:
-            response = response + str(TIMESHEET[project]) + ' heures imputées sur le projet *' +project + '*\n'
+            response = response + '*' + str(TIMESHEET[project]) + '*' + ' heures imputées sur le projet *' +project + '*\n' 
+            sum_hours = sum_hours + TIMESHEET[project]
+        response = response + 'Total de la journée : *' + str(sum_hours) + '*\n' + \
+            'Manque à imputer : *' + str(8-sum_hours) + '*'
     slack_client.api_call("chat.postMessage", channel=channel,
                             text=response, as_user=True)
 
@@ -105,7 +111,7 @@ def handle_command(command, channel):
         returns back what it needs for clarification.
     """
 
-    response = "Not sure what you mean. Use the *" 
+    response = "Not sure what you mean. Use one of the *" 
     for cmd in EXAMPLE_COMMAND:
         response + cmd +', '
     "* command with numbers, delimited by spaces."
