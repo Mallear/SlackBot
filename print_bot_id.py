@@ -1,6 +1,7 @@
 import os
 from slackclient import SlackClient
 
+# Deprecated as get_bot_id() method is set in bot.py script
 
 BOT_NAME = 'ichibot'
 
