@@ -2,15 +2,64 @@ import os
 import time
 from slackclient import SlackClient
 
-# starterbot's ID as an environment variable
-BOT_ID = os.environ.get("BOT_ID")
-
-# constants
-AT_BOT = "<@" + BOT_ID + ">"
-EXAMPLE_COMMAND = "do"
+SLACK_BOT_TOKEN = 'xoxb-250812903346-TT7IJzEQhPkmXGmJRQaeU8fg'
+BOT_NAME = 'ichibot'
+EXAMPLE_COMMAND = ['add', 'list']
+TIMESHEET = {'hors-projet':0, 'vacances':0, 'ARVAL': 0}
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
+slack_client = SlackClient(SLACK_BOT_TOKEN)
+
+def get_bot_id():
+    api_call = slack_client.api_call("users.list")
+    if api_call.get('ok'):
+        # retrieve all users so we can find our bot
+        users = api_call.get('members')
+        for user in users:
+            if 'name' in user and user.get('name') == BOT_NAME:
+                return user.get('id')
+    else:
+        return None
+
+
+def handle_add_command(command, channel):
+    """
+        Receive commands to add worked hours to a precise project.
+    """
+    args = command.split(' ')
+    hours = args[1]
+    if is_number(hours):
+        if args[2] == 'to':
+            project = args[3]
+            if project in TIMESHEET:
+                TIMESHEET[project] = TIMESHEET[project] + int(hours)
+                response = hours + " heures imputées sur le projet " + project
+            else:
+                response = "Le projet " + project + " ne vous est pas associé"
+    else:
+        response = "Veuillez renseigner une valeur d'heure valide : "+ hours
+    slack_client.api_call("chat.postMessage", channel=channel,
+                            text=response, as_user=True)
+
+def handle_list_command(command, channel):
+    """
+        Receive command to list worked hours for one or many projects.
+    """
+    args = command.split(' ')
+    del(args[0])
+    response = ''
+    if len(args) >= 1:
+        for project in args:
+            if project in TIMESHEET:
+                response = response + str(TIMESHEET[project]) + ' heures imputées sur le projet *' +project + '*\n'
+            else:
+                response = response + project + 'ne vous est pas associé'
+    else:
+        for project in TIMESHEET:
+            response = response + str(TIMESHEET[project]) + ' heures imputées sur le projet *' +project + '*\n'
+    slack_client.api_call("chat.postMessage", channel=channel,
+                            text=response, as_user=True)
+
 
 def handle_command(command, channel):
     """
@@ -18,11 +67,20 @@ def handle_command(command, channel):
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
-               "* command with numbers, delimited by spaces."
-    if command.startswith(EXAMPLE_COMMAND):
-        response = "Sure...write some more code then I can do that!"
-    slack_client.api_call("chat.postMessage", channel=channel,
+
+    response = "Not sure what you mean. Use the *" 
+    for cmd in EXAMPLE_COMMAND:
+        response + cmd +', '
+    "* command with numbers, delimited by spaces."
+    
+    action = command.split(' ')[0]
+    if action in EXAMPLE_COMMAND:
+        if action == 'add':
+            handle_add_command(command, channel)
+        elif action == 'list':
+            handle_list_command(command, channel)
+    else:
+        slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
 
@@ -42,8 +100,21 @@ def parse_slack_output(slack_rtm_output):
     return None, None
 
 
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
 if __name__ == "__main__":
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
+    # starterbot's ID 
+    BOT_ID = get_bot_id()
+    # constants
+    AT_BOT = "<@" + BOT_ID + ">"
+
     if slack_client.rtm_connect():
         print("StarterBot connected and running!")
         while True:
