@@ -2,6 +2,17 @@
 
 Code source base for a SlackBot, taken from [slack-starterbot project by MattMakai](https://www.fullstackpython.com/blog/build-first-slack-bot-python.html).
 
+## Getting Started
+
+* Create a slack bot via Slack web interface
+* Add the API token in the script
+* Install dependencies
+* Launch
+OR
+* Build and deploy the container
+
+## Technical Details
+
 Technical stack :
 * Python3
 * SlackClient for Python (explained in MattMakai tuto, see above)
