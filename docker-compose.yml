@@ -1,0 +1,5 @@
+slackbot:
+  container_name: slackbot
+  build: .
+  ports:
+    - 127.0.0.1:80:8080
