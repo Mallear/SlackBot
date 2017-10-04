@@ -1,11 +1,15 @@
 import os
 import time
+import json
 from slackclient import SlackClient
 
 SLACK_BOT_TOKEN = 'xoxb-250812903346-TT7IJzEQhPkmXGmJRQaeU8fg'
-BOT_NAME = 'ichibot'
-EXAMPLE_COMMAND = ['add', 'list']
-TIMESHEET = {'hors-projet':0, 'vacances':0, 'ARVAL': 0}
+BOT_NAME = 'ekinobot'
+EXAMPLE_COMMAND = ['add', 'list', 'set']
+TIMESHEET = {'hors-projet':0, 'vacances':0, 'arval': 0}
+
+# json attachment structure
+
 
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(SLACK_BOT_TOKEN)
@@ -34,6 +38,34 @@ def handle_add_command(command, channel):
             if project in TIMESHEET:
                 TIMESHEET[project] = TIMESHEET[project] + int(hours)
                 response = hours + " heures imputées sur le projet " + project
+                print(slack_client.api_call("chat.postMessage",
+                    channel=channel, text=response, as_user=True, 
+                    attachments=json.dumps([{'text': 'Valider votre imputation ?', 'fallback': 'Validate your request', 'attachment_type': 'default',
+                                 'actions':[{'name': 'validate', 'text': 'Valider', 'type': 'button', 'value': True},
+                                            {'name': 'validate', 'text': 'Refuser', 'type': 'button', 'value': False}]}])
+                )
+                )
+
+            else:
+                response = "Le projet " + project + " ne vous est pas associé"
+    else:
+        response = "Veuillez renseigner une valeur d'heure valide : "+ hours
+    slack_client.api_call("chat.postMessage", channel=channel,
+                            text=response, as_user=True)
+
+
+def handle_set_command(command, channel):
+    """
+        Receive commands to set worked hours to a precise project.
+    """
+    args = command.split(' ')
+    hours = args[1]
+    if is_number(hours):
+        if args[2] == 'to':
+            project = args[3]
+            if project in TIMESHEET:
+                TIMESHEET[project] = int(hours)
+                response = hours + " heures imputées sur le projet " + project
             else:
                 response = "Le projet " + project + " ne vous est pas associé"
     else:
@@ -47,7 +79,7 @@ def handle_list_command(command, channel):
     """
     args = command.split(' ')
     del(args[0])
-    response = ''
+    response = 'Heures imputées du jour :\n'
     if len(args) >= 1:
         for project in args:
             if project in TIMESHEET:
@@ -79,6 +111,8 @@ def handle_command(command, channel):
             handle_add_command(command, channel)
         elif action == 'list':
             handle_list_command(command, channel)
+        elif action == 'set':
+            handle_set_command(command, channel)
     else:
         slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
