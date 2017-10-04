@@ -4,6 +4,7 @@ import json
 from slackclient import SlackClient
 
 SLACK_BOT_TOKEN = 'xoxb-250812903346-TT7IJzEQhPkmXGmJRQaeU8fg'
+#SLACK_BOT_TOKEN = 'xoxb-251274004660-dBVWTDY6JIh28LH4AwG9vyVG'
 BOT_NAME = 'ekinobot'
 EXAMPLE_COMMAND = ['add', 'list', 'set']
 TIMESHEET = {'hors-projet':0, 'vacances':0, 'arval': 0}
@@ -48,10 +49,13 @@ def handle_add_command(command, channel):
 
             else:
                 response = "Le projet " + project + " ne vous est pas associé"
+                slack_client.api_call("chat.postMessage", channel=channel,
+                            text=response, as_user=True)
     else:
         response = "Veuillez renseigner une valeur d'heure valide : "+ hours
-    slack_client.api_call("chat.postMessage", channel=channel,
+        slack_client.api_call("chat.postMessage", channel=channel,
                             text=response, as_user=True)
+    
 
 
 def handle_set_command(command, channel):
