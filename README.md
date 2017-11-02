@@ -8,7 +8,9 @@ Code source base for a SlackBot, taken from [slack-starterbot project by MattMak
 * Add the API token in the script
 * Install dependencies
 * Launch
+
 OR
+
 * Build and deploy the container
 
 ## Technical Details
